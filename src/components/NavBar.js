@@ -9,7 +9,7 @@ const NavBar = ({ user, onLogout }) => (
     <Spacer />
     {/* الروابط العامة */}
     <Link as={RouterLink} to="/" p={2}>الصفحة الرئيسية</Link>
-    {user && <Link as={RouterLink} to="/products" p={2}>المنتجات</Link>}
+    <Link as={RouterLink} to="/products" p={2}>المنتجات</Link>
     {user && <Link as={RouterLink} to="/cart" p={2}>السلة</Link>}
     {user && (
       <Button as={RouterLink} to="/checkout" colorScheme="orange" size="sm" ml={2}>

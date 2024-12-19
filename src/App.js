@@ -49,7 +49,7 @@ function App() {
 
   // إزالة منتج من السلة
   const removeFromCart = (serial) => {
-    setCartItems(cartItems.filter(item => item.serial !== serial));
+    setCartItems(cartItems.filter((item) => item.serial !== serial));
   };
 
   // تحديث بيانات المستخدم
@@ -71,12 +71,10 @@ function App() {
           {/* صفحة تسجيل الدخول */}
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-          {/* صفحة المنتجات */}
+          {/* صفحة المنتجات: متاحة للجميع */}
           <Route
             path="/products"
-            element={
-              user ? <Products products={products} addToCart={addToCart} /> : <Navigate to="/login" />
-            }
+            element={<Products products={products} addToCart={addToCart} />}
           />
 
           {/* صفحة السلة */}
