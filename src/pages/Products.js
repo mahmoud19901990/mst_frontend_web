@@ -89,8 +89,11 @@ const Products = () => {
     try {
       const { categories = [], brands = [], search = '' } = filters;
 
-      const categoryFilter = categories.length ? `&categories=${categories.join(',')}` : '';
-      const brandFilter = brands.length ? `&brands=${brands.join(',')}` : '';
+      const categoryFilter = categories.length ? `&categoryIds=${categories.join(',')}` : '';
+      console.log(categoryFilter);
+
+      const brandFilter = brands.length ? `&brandIds=${brands.join(',')}` : '';
+      console.log(brandFilter);
       const searchFilter = search ? `&search=${search}` : '';
 
       const response = await fetch(
