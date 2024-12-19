@@ -12,7 +12,7 @@ const Checkout = ({ cartItems, totalPrice }) => {
     <Box p={5}>
       <Heading as="h2" size="lg" mb={6}>
         إتمام الطلب
-      </Heading>
+      </Heading>n
 
       {/* تفاصيل الدفع */}
       <Heading size="md" mb={4}>
