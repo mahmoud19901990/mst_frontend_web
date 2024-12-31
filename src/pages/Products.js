@@ -13,27 +13,22 @@ import {
   VStack,
   Spinner,
   Input,
-  useToast,
   Button,
 } from '@chakra-ui/react';
 
-const Products = () => {
-  // تعريف حالات المكونات
-  const [categories, setCategories] = useState([]); // لتخزين الفئات التي تم جلبها
-  const [brands, setBrands] = useState([]); // لتخزين العلامات التجارية التي تم جلبها
-  const [products, setProducts] = useState([]); // لتخزين المنتجات التي تم جلبها
-  const [loading, setLoading] = useState(false); // حالة التحميل (هل البيانات قيد التحميل؟)
-  const [selectedCategories, setSelectedCategories] = useState([]); // لتخزين الفئات التي يختارها المستخدم
-  const [selectedBrands, setSelectedBrands] = useState([]); // لتخزين العلامات التجارية التي يختارها المستخدم
-  const [searchTerm, setSearchTerm] = useState(''); // لتخزين مصطلح البحث الذي يدخله المستخدم
-  const [cart, setCart] = useState([]); // لتخزين المنتجات المضافة إلى السلة
-  const [currentPage, setCurrentPage] = useState(1); // الصفحة الحالية
-  const [totalPages, setTotalPages] = useState(1); // إجمالي عدد الصفحات
-  const toast = useToast(); // لاستخدام إشعارات Chakra UI
+const Products = ({ addToCart }) => {
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const PAGE_SIZE = 5; // عدد المنتجات في كل صفحة
+  const PAGE_SIZE = 5;
 
-  // جلب الفئات من الـ API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -45,20 +40,12 @@ const Products = () => {
         setCategories(data);
       } catch (err) {
         console.error(err);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch categories.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
       }
     };
 
     fetchCategories();
-  }, [toast]);
+  }, []);
 
-  // جلب العلامات التجارية من الـ API
   useEffect(() => {
     const fetchBrands = async () => {
       try {
@@ -70,30 +57,19 @@ const Products = () => {
         setBrands(data);
       } catch (err) {
         console.error(err);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch brands.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
       }
     };
 
     fetchBrands();
-  }, [toast]);
+  }, []);
 
-  // جلب المنتجات بناءً على الفلاتر (الفئات، العلامات التجارية، ومصطلح البحث)
   const fetchProducts = async (page = 1, filters = {}) => {
     setLoading(true);
     try {
       const { categories = [], brands = [], search = '' } = filters;
 
       const categoryFilter = categories.length ? `&categoryIds=${categories.join(',')}` : '';
-      console.log(categoryFilter);
-
       const brandFilter = brands.length ? `&brandIds=${brands.join(',')}` : '';
-      console.log(brandFilter);
       const searchFilter = search ? `&search=${search}` : '';
 
       const response = await fetch(
@@ -108,48 +84,26 @@ const Products = () => {
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch products.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  // التعامل مع التغييرات في الفلاتر
   const handleFilterChange = () => {
-    setCurrentPage(1); // إعادة تعيين الصفحة إلى 1 عند تغيير الفلاتر
+    setCurrentPage(1);
     fetchProducts(1, {
-      categories: selectedCategories, // تمرير الـ IDs
-      brands: selectedBrands, // تمرير الـ IDs
+      categories: selectedCategories,
+      brands: selectedBrands,
       search: searchTerm,
     });
   };
 
-  // إعادة جلب المنتجات عندما تتغير الفلاتر
   useEffect(() => {
     handleFilterChange();
   }, [selectedCategories, selectedBrands, searchTerm]);
 
-  // إضافة منتج إلى السلة
-  const addToCart = (product) => {
-    setCart((prevCart) => [...prevCart, product]);
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} has been added to your cart.`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-
   return (
     <Flex direction={['column', 'row']}>
-      {/* Sidebar (فئات وعلامات تجارية) */}
       <Box w={['100%', '300px']} p={5} borderRight={['none', '1px solid #e0e0e0']}>
         <Heading as="h4" size="md" mb={4} color="teal.600">
           Categories
@@ -184,13 +138,14 @@ const Products = () => {
         </CheckboxGroup>
       </Box>
 
-      {/* عرض المنتجات */}
       <Box flex="1" p={5}>
         <Input
           placeholder="Search for products..."
           mb={4}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+          }}
         />
 
         {loading ? (
@@ -224,7 +179,6 @@ const Products = () => {
           </Text>
         )}
 
-        {/* Pagination */}
         <Flex justifyContent="center" mt={6}>
           <Button
             mr={3}
