@@ -8,22 +8,23 @@ import {
   Heading,
   Stack,
   Flex,
-  Checkbox,
-  CheckboxGroup,
-  VStack,
   Spinner,
   Input,
   Button,
+  Select,
 } from '@chakra-ui/react';
+import { API_BASE_URL, STORE_SERIAL } from './config'; // استيراد المتغيرات
 
 const Products = ({ addToCart }) => {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [brandSearch, setBrandSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -33,7 +34,7 @@ const Products = ({ addToCart }) => {
     const fetchCategories = async () => {
       try {
         const response = await fetch(
-          'https://mahmoud1990.ddns.net:8443/listofcategories/?storeSerial=AW6KY5NU5GTAV7D8EL03Y26QGPBDE0UH'
+          `${API_BASE_URL}/listofcategories/?storeSerial=${STORE_SERIAL}` // استخدام STORE_SERIAL
         );
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
@@ -50,7 +51,7 @@ const Products = ({ addToCart }) => {
     const fetchBrands = async () => {
       try {
         const response = await fetch(
-          'https://mahmoud1990.ddns.net:8443/listofbrands/?storeSerial=AW6KY5NU5GTAV7D8EL03Y26QGPBDE0UH'
+          `${API_BASE_URL}/listofbrands/?storeSerial=${STORE_SERIAL}` // استخدام STORE_SERIAL
         );
         if (!response.ok) throw new Error('Failed to fetch brands');
         const data = await response.json();
@@ -66,14 +67,14 @@ const Products = ({ addToCart }) => {
   const fetchProducts = async (page = 1, filters = {}) => {
     setLoading(true);
     try {
-      const { categories = [], brands = [], search = '' } = filters;
+      const { category = null, brand = null, search = '' } = filters;
 
-      const categoryFilter = categories.length ? `&categoryIds=${categories.join(',')}` : '';
-      const brandFilter = brands.length ? `&brandIds=${brands.join(',')}` : '';
+      const categoryFilter = category ? `&categoryIds=${category}` : '';
+      const brandFilter = brand ? `&brandIds=${brand}` : '';
       const searchFilter = search ? `&search=${search}` : '';
 
       const response = await fetch(
-        `https://mahmoud1990.ddns.net:8443/listofitems/?storeSerial=AW6KY5NU5GTAV7D8EL03Y26QGPBDE0UH&page=${page}&size=${PAGE_SIZE}${categoryFilter}${brandFilter}${searchFilter}`
+        `${API_BASE_URL}/listofitems/?storeSerial=${STORE_SERIAL}&page=${page}&size=${PAGE_SIZE}${categoryFilter}${brandFilter}${searchFilter}` // استخدام STORE_SERIAL
       );
 
       if (!response.ok) throw new Error('Failed to fetch products');
@@ -92,15 +93,31 @@ const Products = ({ addToCart }) => {
   const handleFilterChange = () => {
     setCurrentPage(1);
     fetchProducts(1, {
-      categories: selectedCategories,
-      brands: selectedBrands,
+      category: selectedCategory,
+      brand: selectedBrand,
       search: searchTerm,
     });
   };
 
   useEffect(() => {
     handleFilterChange();
-  }, [selectedCategories, selectedBrands, searchTerm]);
+  }, [selectedCategory, selectedBrand, searchTerm]);
+
+  const filteredCategories = categories.filter((category) =>
+    category.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const filteredBrands = brands.filter((brand) =>
+    brand.brandName.toLowerCase().includes(brandSearch.toLowerCase())
+  );
+
+  const clearFilters = () => {
+    setSelectedCategory(null);
+    setSelectedBrand(null);
+    setSearchTerm('');
+    setCategorySearch('');
+    setBrandSearch('');
+  };
 
   return (
     <Flex direction={['column', 'row']}>
@@ -108,34 +125,48 @@ const Products = ({ addToCart }) => {
         <Heading as="h4" size="md" mb={4} color="teal.600">
           Categories
         </Heading>
-        <CheckboxGroup
-          value={selectedCategories}
-          onChange={(value) => setSelectedCategories(value)}
+        <Input
+          placeholder="Search categories..."
+          mb={2}
+          value={categorySearch}
+          onChange={(e) => setCategorySearch(e.target.value)}
+        />
+        <Select
+          placeholder="Select a category"
+          value={selectedCategory || ''}
+          onChange={(e) => setSelectedCategory(e.target.value || null)}
         >
-          <VStack align="start">
-            {categories.map((category) => (
-              <Checkbox key={category.id} value={category.id}>
-                {category.categoryName}
-              </Checkbox>
-            ))}
-          </VStack>
-        </CheckboxGroup>
+          {filteredCategories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.categoryName}
+            </option>
+          ))}
+        </Select>
 
         <Heading as="h4" size="md" mt={6} mb={4} color="teal.600">
           Brands
         </Heading>
-        <CheckboxGroup
-          value={selectedBrands}
-          onChange={(value) => setSelectedBrands(value)}
+        <Input
+          placeholder="Search brands..."
+          mb={2}
+          value={brandSearch}
+          onChange={(e) => setBrandSearch(e.target.value)}
+        />
+        <Select
+          placeholder="Select a brand"
+          value={selectedBrand || ''}
+          onChange={(e) => setSelectedBrand(e.target.value || null)}
         >
-          <VStack align="start">
-            {brands.map((brand) => (
-              <Checkbox key={brand.id} value={brand.id}>
-                {brand.brandName}
-              </Checkbox>
-            ))}
-          </VStack>
-        </CheckboxGroup>
+          {filteredBrands.map((brand) => (
+            <option key={brand.id} value={brand.id}>
+              {brand.brandName}
+            </option>
+          ))}
+        </Select>
+
+        <Button mt={4} w="100%" colorScheme="teal" onClick={clearFilters}>
+          Clear Filters
+        </Button>
       </Box>
 
       <Box flex="1" p={5}>
@@ -184,8 +215,8 @@ const Products = ({ addToCart }) => {
             mr={3}
             onClick={() =>
               fetchProducts(currentPage - 1, {
-                categories: selectedCategories,
-                brands: selectedBrands,
+                category: selectedCategory,
+                brand: selectedBrand,
                 search: searchTerm,
               })
             }
@@ -200,8 +231,8 @@ const Products = ({ addToCart }) => {
             ml={3}
             onClick={() =>
               fetchProducts(currentPage + 1, {
-                categories: selectedCategories,
-                brands: selectedBrands,
+                category: selectedCategory,
+                brand: selectedBrand,
                 search: searchTerm,
               })
             }
