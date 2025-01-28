@@ -12,8 +12,12 @@ import {
   Input,
   Button,
   Select,
+  Image,
 } from '@chakra-ui/react';
-import { API_BASE_URL, STORE_SERIAL } from './config'; // استيراد المتغيرات
+import { API_BASE_URL, STORE_SERIAL } from './config';
+
+// استيراد الصورة الافتراضية من ملفات المشروع
+import defaultImage from './images.jpg'; // استبدل هذا بالمسار الصحيح للصورة الافتراضية
 
 const Products = ({ addToCart }) => {
   const [categories, setCategories] = useState([]);
@@ -30,11 +34,12 @@ const Products = ({ addToCart }) => {
 
   const PAGE_SIZE = 5;
 
+  // Fetch categories from the API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/listofcategories/?storeSerial=${STORE_SERIAL}` // استخدام STORE_SERIAL
+          `${API_BASE_URL}/listofcategories/?storeSerial=${STORE_SERIAL}`
         );
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
@@ -47,11 +52,12 @@ const Products = ({ addToCart }) => {
     fetchCategories();
   }, []);
 
+  // Fetch brands from the API
   useEffect(() => {
     const fetchBrands = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/listofbrands/?storeSerial=${STORE_SERIAL}` // استخدام STORE_SERIAL
+          `${API_BASE_URL}/listofbrands/?storeSerial=${STORE_SERIAL}`
         );
         if (!response.ok) throw new Error('Failed to fetch brands');
         const data = await response.json();
@@ -64,6 +70,7 @@ const Products = ({ addToCart }) => {
     fetchBrands();
   }, []);
 
+  // Fetch products with optional filters
   const fetchProducts = async (page = 1, filters = {}) => {
     setLoading(true);
     try {
@@ -74,13 +81,26 @@ const Products = ({ addToCart }) => {
       const searchFilter = search ? `&search=${search}` : '';
 
       const response = await fetch(
-        `${API_BASE_URL}/listofitems/?storeSerial=${STORE_SERIAL}&page=${page}&size=${PAGE_SIZE}${categoryFilter}${brandFilter}${searchFilter}` // استخدام STORE_SERIAL
+        `${API_BASE_URL}/listofitems/?storeSerial=${STORE_SERIAL}&page=${page}&size=${PAGE_SIZE}${categoryFilter}${brandFilter}${searchFilter}`
       );
 
       if (!response.ok) throw new Error('Failed to fetch products');
 
       const data = await response.json();
-      setProducts(data.content || []);
+
+      // Fetch images for each product
+      const productsWithImages = await Promise.all(
+        data.content.map(async (product) => {
+          if (product.imageFile) {
+            const imageUrl = await fetchImage(product.imageFile);
+            return { ...product, imageUrl };
+          }
+          // إذا لم يكن هناك صورة، استخدم الصورة الافتراضية
+          return { ...product, imageUrl: defaultImage };
+        })
+      );
+
+      setProducts(productsWithImages || []);
       setTotalPages(data.totalPages || 1);
       setCurrentPage(page);
     } catch (err) {
@@ -90,6 +110,22 @@ const Products = ({ addToCart }) => {
     }
   };
 
+  // Fetch image from the server
+  const fetchImage = async (file) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/getFileNoToken/?storeSerial=${STORE_SERIAL}&file=${file}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
+
+  // Handle filter changes
   const handleFilterChange = () => {
     setCurrentPage(1);
     fetchProducts(1, {
@@ -99,18 +135,22 @@ const Products = ({ addToCart }) => {
     });
   };
 
+  // Re-fetch products when filters change
   useEffect(() => {
     handleFilterChange();
   }, [selectedCategory, selectedBrand, searchTerm]);
 
+  // Filter categories based on search term
   const filteredCategories = categories.filter((category) =>
     category.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
+  // Filter brands based on search term
   const filteredBrands = brands.filter((brand) =>
     brand.brandName.toLowerCase().includes(brandSearch.toLowerCase())
   );
 
+  // Clear all filters
   const clearFilters = () => {
     setSelectedCategory(null);
     setSelectedBrand(null);
@@ -121,6 +161,7 @@ const Products = ({ addToCart }) => {
 
   return (
     <Flex direction={['column', 'row']}>
+      {/* Sidebar for filters */}
       <Box w={['100%', '300px']} p={5} borderRight={['none', '1px solid #e0e0e0']}>
         <Heading as="h4" size="md" mb={4} color="teal.600">
           Categories
@@ -169,6 +210,7 @@ const Products = ({ addToCart }) => {
         </Button>
       </Box>
 
+      {/* Main content area */}
       <Box flex="1" p={5}>
         <Input
           placeholder="Search for products..."
@@ -189,6 +231,13 @@ const Products = ({ addToCart }) => {
               <Card key={product.id} borderWidth="1px" borderRadius="lg">
                 <CardBody>
                   <Stack spacing={3}>
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      borderRadius="md"
+                      
+                      objectFit="cover"
+                    />
                     <Heading size="md" color="teal.500">
                       {product.name}
                     </Heading>
@@ -210,6 +259,7 @@ const Products = ({ addToCart }) => {
           </Text>
         )}
 
+        {/* Pagination controls */}
         <Flex justifyContent="center" mt={6}>
           <Button
             mr={3}
